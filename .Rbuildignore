@@ -1,2 +1,3 @@
 ^coursera\.Rproj$
 ^\.Rproj\.user$
+^\.travis\.yml$
