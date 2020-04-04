@@ -1,0 +1,178 @@
+---
+title: "vignette"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, eval=F,echo=TRUE}
+library(coursera)
+```
+
+```{r,eval=F,echo=TRUE}
+fars_read <- function(filename) {
+        if(!file.exists(filename))
+                stop("file '", filename, "' does not exist")
+        data <- suppressMessages({
+                readr::read_csv(filename, progress = FALSE)
+        })
+        dplyr::tbl_df(data)
+}
+
+dat <- fars_read("accident_2013.csv.bz2")
+
+```
+
+@ Function fars_read: import file to environemnt
+
+@Arguments:
+ filename : file to import
+
+@ Value:
+# return a dataframe 
+
+@ Condition to error
+ If file name doesn't exist
+
+@ Require
+ Function read_csv function in readr package and tbl_df function in and dplyr package  
+
+@ examples
+ data <- fars_read(file)
+ class(data) 
+ [1] "tbl_df"     "tbl"        "data.frame"
+
+```{r,eval=F,echo=TRUE}
+make_filename <- function(year) {
+        year <- as.integer(year)
+        sprintf("accident_%d.csv.bz2", year)
+}
+
+```
+
+@# Function make_filename : assign year inside of the file name.
+@ Arguments: 
+@ year: year to add in the name file 
+
+@ Value
+ return a name of data with the value oif year inside it
+
+@ Condition to error
+If value of year is string  
+
+@ Require
+ sprintf function in r base package
+
+@ Examples
+ make_filename(1920)
+ [1] "accident_1920.csv.bz2"
+
+```{r,eval=F,echo=TRUE}
+fars_read_years <- function(years) {
+        lapply(years, function(year) {
+                file <- make_filename(year)
+                tryCatch({
+                        dat <- fars_read(file)
+                        dplyr::mutate(dat, year = year) %>% 
+                                dplyr::select(MONTH, year)
+                }, error = function(e) {
+                        warning("invalid year: ", year)
+                        return(NULL)
+                })
+        })
+}
+
+```
+
+@ Function  "fars_read_years" : use differents years for create a diferent data frame with the values of select year and all month inside. 
+ Arguments:
+ years : vector of integrer or double with years
+
+@ Value
+ data frame with the values of select year and all month inside.
+
+@ Condition to error
+ If value of years doesn´t exist ini orinigal data frame , function doesn´t work
+
+@ Require
+ function mutate and select from dplyr package
+
+@ Examples 
+ fars_read_years(c(2018,2019,2020))
+
+```{r,eval=F,echo=TRUE}
+fars_summarize_years <- function(years) {
+        dat_list <- fars_read_years(years)
+        dplyr::bind_rows(dat_list) %>% 
+                dplyr::group_by(year, MONTH) %>% 
+                dplyr::summarize(n = n()) %>%
+                tidyr::spread(year, n)
+}
+
+```
+
+@ Function fars_summarize_years : take select years for create q new df with the summary of event in this periods
+ Arguments:
+ years : vector of integrer or double with years
+
+@ Value
+ data frame with the summary of event in this periods
+
+@ Condition to error
+ If value of years doesn´t exist ini orinigal data frame , function doesn´t work
+
+@ Require
+ group_by, summarize and bind_rows functions in dplyr package and spread function in tidyr package
+
+@ Examples 
+ fars_summarize_years(c(2019,2018,2020))
+
+```{r,eval=F,echo=TRUE}
+fars_map_state <- function(state.num, year) {
+        filename <- make_filename(year)
+        data <- fars_read(filename)
+        state.num <- as.integer(state.num)
+
+        if(!(state.num %in% unique(data$STATE)))
+                stop("invalid STATE number: ", state.num)
+        data.sub <- dplyr::filter(data, STATE == state.num)
+        if(nrow(data.sub) == 0L) {
+                message("no accidents to plot")
+                return(invisible(NULL))
+        }
+        is.na(data.sub$LONGITUD) <- data.sub$LONGITUD > 900
+        is.na(data.sub$LATITUDE) <- data.sub$LATITUDE > 90
+        with(data.sub, {
+                maps::map("state", ylim = range(LATITUDE, na.rm = TRUE),
+                          xlim = range(LONGITUD, na.rm = TRUE))
+                graphics::points(LONGITUD, LATITUDE, pch = 46)
+        })
+}
+``` 
+
+@ Function fars_map_state : create a map plot of the state according to the year selected
+ Arguments:
+ state : number of state 
+ year : year to select 
+
+@ Value
+ plot (maps) with coordinates of state an number of cases
+
+@ Condition to error
+ Incorrect year in data, incorrect state number
+
+@ Require
+ filter function in dplyr package, maps function in maps package and points function in graphics package 
+
+@ Examples
+ fars_map_state(state.num=1, year = 2013)
+

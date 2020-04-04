@@ -1,0 +1,17 @@
+Package: coursera
+Title: Final test of coursera course
+Version: 0.0.0.9000
+Authors@R: Luis Cano
+    person(given = "Luis",
+           family = "Cano",
+           role = c("aut", "cre"),
+           email = "luiscanoayestas@gmail.com",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: Test coursera.
+License: GLP
+Encoding: UTF-8
+LazyData: true
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
